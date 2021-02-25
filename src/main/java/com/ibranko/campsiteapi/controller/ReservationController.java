@@ -2,19 +2,16 @@ package com.ibranko.campsiteapi.controller;
 
 import com.ibranko.campsiteapi.model.Reservation;
 import com.ibranko.campsiteapi.repository.ReservationRepository;
-import org.apache.tomcat.jni.Local;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
+import static com.ibranko.campsiteapi.utils.DateUtils.daysBetween;
 
 @RestController
 @RequestMapping("/reservations")
@@ -66,18 +63,20 @@ public class ReservationController {
     }
 
     @GetMapping
-    private void findAvailableDates(@RequestBody Map<String, LocalDate> input) {
+    private List<LocalDate> findAvailableDates(@RequestBody Map<String, LocalDate> input) {
 
         //Sets default dates if null
         LocalDate initDate = input.get("initDate") == null ? LocalDate.now().plusDays(1) : input.get("initDate");
         LocalDate endDate = input.get("endDate") == null ? LocalDate.now().plusMonths(1) : input.get("endDate");
 
-        List<LocalDate> dates = Stream.iterate(initDate, date -> date.plusDays(1))
-                .limit(ChronoUnit.DAYS.between(initDate, endDate))
-                .collect(Collectors.toList());
+        List<LocalDate> availableDates = daysBetween(initDate, endDate);
 
         List<Reservation> reservations = reservationRepository.findAllByRangeOrderByInitDate(initDate, endDate, Reservation.Status.CONFIRMED);
 
+        //Removes already reserved days from the list containing available days
+        reservations.forEach(r -> availableDates.removeAll(daysBetween(r.getInitDate(), r.getEndDate())));
+
+        return availableDates;
     }
 
     private boolean isValidReservation(Reservation reservation) {
