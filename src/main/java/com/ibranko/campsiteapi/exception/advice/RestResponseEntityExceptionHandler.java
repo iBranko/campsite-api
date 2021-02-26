@@ -1,6 +1,7 @@
 package com.ibranko.campsiteapi.exception.advice;
 
 import com.ibranko.campsiteapi.exception.InvalidDateException;
+import com.ibranko.campsiteapi.exception.InvalidReservationStatusException;
 import com.ibranko.campsiteapi.exception.ReservationNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,8 +21,8 @@ public class RestResponseEntityExceptionHandler extends ResponseEntityExceptionH
         return getObjectResponseEntity(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
-    @ExceptionHandler(InvalidDateException.class)
-    ResponseEntity<Object> invalidException(InvalidDateException ex) {
+    @ExceptionHandler({InvalidDateException.class, InvalidReservationStatusException.class})
+    ResponseEntity<Object> invalidException(RuntimeException ex) {
         return getObjectResponseEntity(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 

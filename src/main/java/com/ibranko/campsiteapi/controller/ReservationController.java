@@ -1,6 +1,7 @@
 package com.ibranko.campsiteapi.controller;
 
 import com.ibranko.campsiteapi.exception.InvalidDateException;
+import com.ibranko.campsiteapi.exception.InvalidReservationStatusException;
 import com.ibranko.campsiteapi.exception.ReservationNotFoundException;
 import com.ibranko.campsiteapi.model.Reservation;
 import com.ibranko.campsiteapi.repository.ReservationRepository;
@@ -55,8 +56,11 @@ public class ReservationController {
         Reservation reservationToUpdate = reservationRepository.findByBookingId(bookingId)
                 .orElseThrow(() -> new ReservationNotFoundException(String.format("The entered booking id (%s) was not found", bookingId)));
 
-        reservationRepository.save(reservation);
-        return reservationToUpdate;
+        if(reservationToUpdate.getStatus() == Reservation.Status.CANCELLED) {
+            throw new InvalidReservationStatusException("The requested booking is cancelled");
+        }
+
+        return reservationRepository.save(reservation);
     }
 
     @DeleteMapping("/{bookingId}")
