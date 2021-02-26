@@ -52,8 +52,11 @@ public class ReservationController {
     public Reservation updateReservation(@PathVariable("bookingId") UUID bookingId, @RequestBody Reservation reservation){
         checkIfReservationIsValid(reservation);
 
+        Reservation reservationToUpdate = reservationRepository.findByBookingId(bookingId)
+                .orElseThrow(() -> new ReservationNotFoundException(String.format("The entered booking id (%s) was not found", bookingId)));
+
         reservationRepository.save(reservation);
-        return reservationRepository.findByBookingId(bookingId).get();
+        return reservationToUpdate;
     }
 
     @DeleteMapping("/{bookingId}")
