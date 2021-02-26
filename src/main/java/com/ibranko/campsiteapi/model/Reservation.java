@@ -22,7 +22,7 @@ public class Reservation {
     private Long id;
 
     @EqualsAndHashCode.Include
-    @Column(name = "booking_id", nullable = false, updatable = false)
+    @Column(name = "booking_id", nullable = false, updatable = false, unique = true)
     private UUID bookingId = UUID.randomUUID();
 
     @Column(name = "status", nullable = false)

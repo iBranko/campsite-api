@@ -6,6 +6,7 @@ import com.ibranko.campsiteapi.exception.ReservationNotFoundException;
 import com.ibranko.campsiteapi.model.Reservation;
 import com.ibranko.campsiteapi.repository.ReservationRepository;
 import com.ibranko.campsiteapi.utils.DateUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -60,7 +61,9 @@ public class ReservationController {
             throw new InvalidReservationStatusException("The requested booking is cancelled");
         }
 
-        return reservationRepository.save(reservation);
+        BeanUtils.copyProperties(reservation, reservationToUpdate,"id", "booking_id");
+
+        return reservationRepository.save(reservationToUpdate);
     }
 
     @DeleteMapping("/{bookingId}")
