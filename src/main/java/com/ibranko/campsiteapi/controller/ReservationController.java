@@ -23,6 +23,16 @@ public class ReservationController {
     @Autowired
     private ReservationRepository reservationRepository;
 
+    @GetMapping("/getAll")
+    public List<Reservation> getReservations(@RequestBody Map<String, LocalDate> input) {
+
+        //Sets default dates if null
+        LocalDate initDate = input.get("initDate") == null ? LocalDate.now().plusDays(1) : input.get("initDate");
+        LocalDate endDate = input.get("endDate") == null ? LocalDate.now().plusMonths(1) : input.get("endDate");
+
+        return reservationRepository.findAllByRangeOrderByInitDate(initDate, endDate, Reservation.Status.CONFIRMED);
+    }
+
     @GetMapping("/{bookingId}")
     public Reservation getReservation(@PathVariable("bookingId") UUID bookingId) {
         return reservationRepository.findByBookingId(bookingId)
@@ -32,30 +42,28 @@ public class ReservationController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Reservation addReservation(@RequestBody Reservation reservation) {
-        if(isValidReservation(reservation)) {
-            return reservationRepository.save(reservation);
-        }
-        return reservation;
+        checkIfReservationIsValid(reservation);
+
+        return reservationRepository.save(reservation);
+    }
+
+    @PutMapping("/{bookingId}")
+    @ResponseStatus(HttpStatus.OK)
+    public Reservation updateReservation(@PathVariable("bookingId") UUID bookingId, @RequestBody Reservation reservation){
+        checkIfReservationIsValid(reservation);
+
+        reservationRepository.save(reservation);
+        return reservationRepository.findByBookingId(bookingId).get();
     }
 
     @DeleteMapping("/{bookingId}")
+    @ResponseStatus(HttpStatus.OK)
     public Reservation cancelReservation(@PathVariable("bookingId") UUID bookingId) {
         Reservation reservationToCancel = reservationRepository.findByBookingId(bookingId)
                 .orElseThrow(() -> new ReservationNotFoundException(String.format("The entered booking id (%s) was not found", bookingId)));
 
         reservationToCancel.setStatus(Reservation.Status.CANCELLED);
         return reservationRepository.save(reservationToCancel);
-    }
-
-    @PutMapping("/{bookingId}")
-    public Reservation updateReservation(@PathVariable("bookingId") UUID bookingId, @RequestBody Reservation reservation){
-        isValidReservation(reservation);
-
-        if(!bookingId.equals(reservation.getBookingId())) {
-            System.out.println("Booking id does not match");
-        }
-
-        return reservationRepository.save(reservation);
     }
 
     @GetMapping
@@ -68,7 +76,7 @@ public class ReservationController {
         return findAvailableDates(initDate, endDate);
     }
 
-    private boolean isValidReservation(Reservation reservation) {
+    private boolean checkIfReservationIsValid(Reservation reservation) {
         LocalDate initDate = reservation.getInitDate();
         LocalDate endDate = reservation.getEndDate();
 
@@ -89,7 +97,7 @@ public class ReservationController {
 
         //If the specified days are not available
         if (!findAvailableDates(initDate, endDate).containsAll(DateUtils.daysBetween(initDate, endDate))) {
-            throw new InvalidDateException("The entered date is not available anymore");
+            throw new InvalidDateException("The entered date is already reserved.");
         }
 
         return true;

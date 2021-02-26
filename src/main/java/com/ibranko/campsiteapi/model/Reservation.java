@@ -1,12 +1,14 @@
 package com.ibranko.campsiteapi.model;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import javax.persistence.*;
 import java.time.LocalDate;
 import java.util.UUID;
 
 @Data
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 public class Reservation {
 
@@ -19,8 +21,9 @@ public class Reservation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @EqualsAndHashCode.Include
     @Column(name = "booking_id", nullable = false, updatable = false)
-    UUID bookingId = UUID.randomUUID();
+    private UUID bookingId = UUID.randomUUID();
 
     @Column(name = "status", nullable = false)
     private Status status = Status.CONFIRMED;
@@ -36,4 +39,5 @@ public class Reservation {
 
     @Column(name = "full_name", nullable = false)
     private String fullName;
+
 }
