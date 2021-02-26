@@ -8,6 +8,8 @@ import com.ibranko.campsiteapi.repository.ReservationRepository;
 import com.ibranko.campsiteapi.utils.DateUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,6 +37,18 @@ public class ReservationController {
         return reservationRepository.findAllByRangeOrderByInitDate(initDate, endDate, Reservation.Status.CONFIRMED);
     }
 
+    @GetMapping
+    @Cacheable("availableDates")
+    @ResponseStatus(HttpStatus.OK)
+    public List<LocalDate> getAvailableDates(@RequestBody Map<String, LocalDate> input) {
+
+        //Sets default dates if null
+        LocalDate initDate = input.get("initDate") == null ? LocalDate.now().plusDays(1) : input.get("initDate");
+        LocalDate endDate = input.get("endDate") == null ? LocalDate.now().plusMonths(1) : input.get("endDate");
+
+        return findAvailableDates(initDate, endDate);
+    }
+
     @GetMapping("/{bookingId}")
     @ResponseStatus(HttpStatus.OK)
     public Reservation getReservation(@PathVariable("bookingId") UUID bookingId) {
@@ -43,6 +57,7 @@ public class ReservationController {
     }
 
     @PostMapping
+    @CacheEvict("availableDates")
     @ResponseStatus(HttpStatus.CREATED)
     public Reservation addReservation(@RequestBody Reservation reservation) {
         checkIfReservationIsValid(reservation);
@@ -51,6 +66,7 @@ public class ReservationController {
     }
 
     @PutMapping("/{bookingId}")
+    @CacheEvict("availableDates")
     @ResponseStatus(HttpStatus.OK)
     public Reservation updateReservation(@PathVariable("bookingId") UUID bookingId, @RequestBody Reservation reservation){
         checkIfReservationIsValid(reservation);
@@ -68,6 +84,7 @@ public class ReservationController {
     }
 
     @DeleteMapping("/{bookingId}")
+    @CacheEvict("availableDates")
     @ResponseStatus(HttpStatus.OK)
     public Reservation cancelReservation(@PathVariable("bookingId") UUID bookingId) {
         Reservation reservationToCancel = reservationRepository.findByBookingId(bookingId)
@@ -75,17 +92,6 @@ public class ReservationController {
 
         reservationToCancel.setStatus(Reservation.Status.CANCELLED);
         return reservationRepository.save(reservationToCancel);
-    }
-
-    @GetMapping
-    @ResponseStatus(HttpStatus.OK)
-    private List<LocalDate> getAvailableDates(@RequestBody Map<String, LocalDate> input) {
-
-        //Sets default dates if null
-        LocalDate initDate = input.get("initDate") == null ? LocalDate.now().plusDays(1) : input.get("initDate");
-        LocalDate endDate = input.get("endDate") == null ? LocalDate.now().plusMonths(1) : input.get("endDate");
-
-        return findAvailableDates(initDate, endDate);
     }
 
     private boolean checkIfReservationIsValid(Reservation reservation) {
