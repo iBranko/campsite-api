@@ -15,10 +15,11 @@ public class Reservation {
     }
 
     @Id
+    @Column(name = "id", nullable = false, updatable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "booking_id", nullable = false)
+    @Column(name = "booking_id", nullable = false, updatable = false)
     UUID bookingId = UUID.randomUUID();
 
     @Column(name = "status", nullable = false)
