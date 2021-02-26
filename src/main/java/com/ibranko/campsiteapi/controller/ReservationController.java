@@ -1,5 +1,7 @@
 package com.ibranko.campsiteapi.controller;
 
+import com.ibranko.campsiteapi.exception.InvalidDateException;
+import com.ibranko.campsiteapi.exception.ReservationNotFoundException;
 import com.ibranko.campsiteapi.model.Reservation;
 import com.ibranko.campsiteapi.repository.ReservationRepository;
 import com.ibranko.campsiteapi.utils.DateUtils;
@@ -21,19 +23,10 @@ public class ReservationController {
     @Autowired
     private ReservationRepository reservationRepository;
 
-//    @GetMapping
-//    public List<Reservation> getReservations(@RequestBody Map<String, LocalDate> input) {
-//
-//        //Sets default dates if null
-//        LocalDate initDate = input.get("initDate") == null ? LocalDate.now().plusDays(1) : input.get("initDate");
-//        LocalDate endDate = input.get("endDate") == null ? LocalDate.now().plusMonths(1) : input.get("endDate");
-//
-//        return reservationRepository.findAllByRangeOrderByInitDate(initDate, endDate, Reservation.Status.CONFIRMED);
-//    }
-
     @GetMapping("/{bookingId}")
     public Reservation getReservation(@PathVariable("bookingId") UUID bookingId) {
-        return reservationRepository.findByBookingId(bookingId);
+        return reservationRepository.findByBookingId(bookingId)
+                .orElseThrow(() -> new ReservationNotFoundException(String.format("The entered booking id (%s) was not found", bookingId)));
     }
 
     @PostMapping
@@ -47,7 +40,9 @@ public class ReservationController {
 
     @DeleteMapping("/{bookingId}")
     public Reservation cancelReservation(@PathVariable("bookingId") UUID bookingId) {
-        Reservation reservationToCancel = reservationRepository.findByBookingId(bookingId);
+        Reservation reservationToCancel = reservationRepository.findByBookingId(bookingId)
+                .orElseThrow(() -> new ReservationNotFoundException(String.format("The entered booking id (%s) was not found", bookingId)));
+
         reservationToCancel.setStatus(Reservation.Status.CANCELLED);
         return reservationRepository.save(reservationToCancel);
     }
@@ -77,26 +72,24 @@ public class ReservationController {
         LocalDate initDate = reservation.getInitDate();
         LocalDate endDate = reservation.getEndDate();
 
-        //TODO Create and throw exceptions
-
         //The campsite can be reserved up to 1 month in advance
         if (initDate.isAfter(LocalDate.now().plusMonths(1))) {
-            System.out.println("You can reserve up to a maximum of 1 month in advance.");
+            throw new InvalidDateException("You can reserve up to a maximum of 1 month in advance.");
         }
 
         //The campsite can be reserved for max 3 days
         if (endDate.compareTo(initDate) > 3) {
-            System.out.println("You can reserve a maximum of 3 days.");
+            throw new InvalidDateException("You can reserve a maximum of 3 days.");
         }
 
         //The campsite can be reserved minimum 1 day(s) ahead of arrival
         if (initDate.isBefore(LocalDate.now().plusDays(1)) || endDate.isBefore(LocalDate.now().plusDays(1))) {
-            System.out.println("Reservation date must be tomorrow or later.");
+            throw new InvalidDateException("Reservation date must be tomorrow or later.");
         }
 
         //If the specified days are not available
         if (!findAvailableDates(initDate, endDate).containsAll(DateUtils.daysBetween(initDate, endDate))) {
-            System.out.println("The entered date is not available anymore");
+            throw new InvalidDateException("The entered date is not available anymore");
         }
 
         return true;
