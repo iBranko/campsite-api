@@ -1,6 +1,7 @@
 package com.ibranko.campsiteapi.exception.advice;
 
 import com.ibranko.campsiteapi.exception.InvalidDateException;
+import com.ibranko.campsiteapi.exception.InvalidReservationException;
 import com.ibranko.campsiteapi.exception.ReservationNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,15 +18,15 @@ public class RestResponseEntityExceptionHandler extends ResponseEntityExceptionH
 
     @ExceptionHandler(ReservationNotFoundException.class)
     ResponseEntity<Object> reservationNotFound(ReservationNotFoundException ex) {
-        return getObjectResponseEntity(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        return getObjectResponseEntity(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
-    @ExceptionHandler(InvalidDateException.class)
-    ResponseEntity<Object> invalidDate(InvalidDateException ex) {
-        return getObjectResponseEntity(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+    @ExceptionHandler({InvalidDateException.class, InvalidReservationException.class})
+    ResponseEntity<Object> invalidException(InvalidDateException ex) {
+        return getObjectResponseEntity(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
-    private ResponseEntity<Object> getObjectResponseEntity(HttpStatus httpStatus, String message, RuntimeException ex) {
+    private ResponseEntity<Object> getObjectResponseEntity(HttpStatus httpStatus, String message) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("timestamp", LocalDateTime.now());
         body.put("status", httpStatus);
