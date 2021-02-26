@@ -25,7 +25,7 @@ public class ReservationController {
     @Autowired
     private ReservationRepository reservationRepository;
 
-    @GetMapping("/getAll")
+    @GetMapping("/all")
     public List<Reservation> getReservations(@RequestBody Map<String, LocalDate> input) {
 
         //Sets default dates if null
@@ -36,6 +36,7 @@ public class ReservationController {
     }
 
     @GetMapping("/{bookingId}")
+    @ResponseStatus(HttpStatus.OK)
     public Reservation getReservation(@PathVariable("bookingId") UUID bookingId) {
         return reservationRepository.findByBookingId(bookingId)
                 .orElseThrow(() -> new ReservationNotFoundException(String.format("The entered booking id (%s) was not found", bookingId)));
@@ -61,7 +62,7 @@ public class ReservationController {
             throw new InvalidReservationStatusException("The requested booking is cancelled");
         }
 
-        BeanUtils.copyProperties(reservation, reservationToUpdate,"id", "booking_id");
+        BeanUtils.copyProperties(reservation, reservationToUpdate,"id", "booking_id", "status");
 
         return reservationRepository.save(reservationToUpdate);
     }
@@ -77,6 +78,7 @@ public class ReservationController {
     }
 
     @GetMapping
+    @ResponseStatus(HttpStatus.OK)
     private List<LocalDate> getAvailableDates(@RequestBody Map<String, LocalDate> input) {
 
         //Sets default dates if null
