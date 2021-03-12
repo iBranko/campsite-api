@@ -20,7 +20,7 @@ date(s). Demonstrate with appropriate test cases that the system can gracefully 
 * In general, the system should be able to handle large volume of requests for getting the campsite availability.
 * There are no restrictions on how reservations are stored as as long as system constraints are not violated.
 
-## Handling large volume os requests:
+## Handling large volume of requests:
 Testing ran on JMeter with 10.000 requests on a sample of 10 diferent dates:
 ![JMeter test result](https://github.com/iBranko/campsite-api/blob/master/src/main/resources/test/JMeter-test-result.JPG)
 
